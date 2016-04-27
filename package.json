@@ -1,6 +1,6 @@
 {
   "name": "angular-material-bottom-sheet-collapsible",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A collapsible bottom sheet inspired by Google Maps",
   "main": "index.js",
   "scripts": {
