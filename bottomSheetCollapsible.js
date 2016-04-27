@@ -141,7 +141,8 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
   // how fast we need to flick down to close the sheet, pixels/ms
   var CLOSING_VELOCITY = 0.5;
   var PADDING = 80; // same as css
-
+
+
   bottomSheetCollapsibleDefaults.$inject = ["$animate", "$mdConstant", "$mdUtil", "$mdTheming", "$mdBottomSheetCollapsible", "$rootElement", "$mdGesture"];
   return $$interimElementProvider('$mdBottomSheetCollapsible')
     .setDefaults({
@@ -178,7 +179,7 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
         // Prevent mouse focus on backdrop; ONLY programatic focus allowed.
         // This allows clicks on backdrop to propogate to the $rootElement and
         // ESC key events to be detected properly.
-        
+
         backdrop[0].tabIndex = -1;
 
         if (options.clickOutsideToClose) {
@@ -243,6 +244,7 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
      */
     function BottomSheetCollapsible(element, parent) {
       var deregister = $mdGesture.register(parent, 'drag', { horizontal: false });
+      var dragging = false;
       parent.on('$md.dragstart', onDragStart)
         .on('$md.drag', onDrag)
         .on('$md.dragend', onDragEnd);
@@ -260,27 +262,36 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
       function onDragStart(ev) {
         // Disable transitions on transform so that it feels fast
         element.css($mdConstant.CSS.TRANSITION_DURATION, '0ms');
+
+        dragging = false;
+        ev.path.forEach(function(el) {
+          if (el.tagName == "MD-BOTTOM-SHEET-COLLAPSIBLE") {
+            dragging = true;
+          }
+        });
       }
 
       function onDrag(ev) {
-        var transform = ev.pointer.distanceY;
-        if (transform < 5) {
-          // Slow down drag when trying to drag up, and stop after PADDING
-          transform = Math.max(-PADDING, transform / 2);
+        if (dragging) {
+          var transform = ev.pointer.distanceY;
+          if (transform > 0) {
+            element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform) + 'px,0)');
+          }
         }
-        element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform) + 'px,0)');
       }
 
       function onDragEnd(ev) {
-        if (ev.pointer.distanceY > 0 &&
-            (ev.pointer.distanceY > 20 || Math.abs(ev.pointer.velocityY) > CLOSING_VELOCITY)) {
-          var distanceRemaining = element.prop('offsetHeight') - ev.pointer.distanceY;
-          var transitionDuration = Math.min(distanceRemaining / ev.pointer.velocityY * 0.75, 500);
-          element.css($mdConstant.CSS.TRANSITION_DURATION, transitionDuration + 'ms');
-          $mdUtil.nextTick($mdBottomSheetCollapsible.cancel,true);
-        } else {
-          element.css($mdConstant.CSS.TRANSITION_DURATION, '');
-          element.css($mdConstant.CSS.TRANSFORM, '');
+        if (dragging) {
+          if (ev.pointer.distanceY > 0 &&
+              (ev.pointer.distanceY > 20 || Math.abs(ev.pointer.velocityY) > CLOSING_VELOCITY)) {
+            var distanceRemaining = element.prop('offsetHeight') - ev.pointer.distanceY;
+            var transitionDuration = Math.min(distanceRemaining / ev.pointer.velocityY * 0.75, 500);
+            element.css($mdConstant.CSS.TRANSITION_DURATION, transitionDuration + 'ms');
+            $mdUtil.nextTick($mdBottomSheetCollapsible.cancel,true);
+          } else {
+            element.css($mdConstant.CSS.TRANSITION_DURATION, '');
+            element.css($mdConstant.CSS.TRANSFORM, '');
+          }
         }
       }
     }
