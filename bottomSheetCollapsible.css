@@ -1,13 +1,12 @@
-/*!
- * Angular Material Design
- * https://github.com/angular/material
- * @license MIT
- * v1.1.0-rc4
- */
-/*  Only used with Theme processes */
-html.md-THEME_NAME-theme, body.md-THEME_NAME-theme {
-  color: '{{foreground-1}}';
-  background-color: '{{background-color}}'; }
+md-bottom-sheet-collapsible.md-default-theme {
+  background-color: rgb(250,250,250);
+  border-top-color: rgb(224,224,224); }
+  md-bottom-sheet-collapsible.md-default-theme.md-list md-list-item {
+    color: rgba(0,0,0,.87); }
+  md-bottom-sheet-collapsible.md-default-theme .md-subheader {
+    background-color: rgb(250,250,250); }
+  md-bottom-sheet-collapsible.md-default-theme .md-subheader {
+    color: rgba(0,0,0,.87); }
 
 md-bottom-sheet-collapsible {
   position: absolute;
