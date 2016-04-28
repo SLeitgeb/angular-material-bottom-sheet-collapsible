@@ -13,7 +13,7 @@ md-bottom-sheet-collapsible {
   left: 0;
   right: 0;
   bottom: 0;
-  padding: 8px 16px 88px 16px;
+  padding: 8px 0px 88px 0px;
   z-index: 70;
   border-top-width: 1px;
   border-top-style: solid;

@@ -142,7 +142,6 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
   var CLOSING_VELOCITY = 0.5;
   var PADDING = 80; // same as css
 
-
   bottomSheetCollapsibleDefaults.$inject = ["$animate", "$mdConstant", "$mdUtil", "$mdTheming", "$mdBottomSheetCollapsible", "$rootElement", "$mdGesture"];
   return $$interimElementProvider('$mdBottomSheetCollapsible')
     .setDefaults({
@@ -184,7 +183,7 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
 
         if (options.clickOutsideToClose) {
           backdrop.on('click', function() {
-            $mdUtil.nextTick($mdBottomSheetCollapsible.cancel,true);
+            $mdUtil.nextTick($mdBottomSheetCollapsible.cancel, true);
           });
         }
 
@@ -244,7 +243,11 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
      */
     function BottomSheetCollapsible(element, parent) {
       var deregister = $mdGesture.register(parent, 'drag', { horizontal: false });
+      var peekHeight = 100;
+      var minOffset = 400;
       var dragging = false;
+      var state = "STATE_COLLAPSED";
+
       parent.on('$md.dragstart', onDragStart)
         .on('$md.drag', onDrag)
         .on('$md.dragend', onDragEnd);
@@ -275,8 +278,14 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
         if (dragging) {
           var transform = ev.pointer.distanceY;
           if (transform > 0) {
-            element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform) + 'px,0)');
           }
+
+          if (state === "STATE_COLLAPSED") {
+            element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform) + 'px,0)');
+          } else {
+            element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform - minOffset) + 'px,0)');
+          }
+
         }
       }
 
@@ -284,13 +293,25 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
         if (dragging) {
           if (ev.pointer.distanceY > 0 &&
               (ev.pointer.distanceY > 20 || Math.abs(ev.pointer.velocityY) > CLOSING_VELOCITY)) {
-            var distanceRemaining = element.prop('offsetHeight') - ev.pointer.distanceY;
-            var transitionDuration = Math.min(distanceRemaining / ev.pointer.velocityY * 0.75, 500);
+
+            if (state == "STATE_EXPANDED") {
+              element.css($mdConstant.CSS.TRANSITION_DURATION, '');
+              element.css($mdConstant.CSS.TRANSFORM, '');
+              state = "STATE_COLLAPSED"
+            } else {
+              var transitionDuration = 500;
+              element.css($mdConstant.CSS.TRANSITION_DURATION, transitionDuration + 'ms');
+              $mdUtil.nextTick($mdBottomSheetCollapsible.cancel, true);
+            }
+          } else if (ev.pointer.distanceY < 0) {
+            var transitionDuration = 500;
             element.css($mdConstant.CSS.TRANSITION_DURATION, transitionDuration + 'ms');
-            $mdUtil.nextTick($mdBottomSheetCollapsible.cancel,true);
+            element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING - minOffset) + 'px,0)');
+            state = "STATE_EXPANDED";
           } else {
             element.css($mdConstant.CSS.TRANSITION_DURATION, '');
             element.css($mdConstant.CSS.TRANSFORM, '');
+            state = "STATE_COLLAPSED"
           }
         }
       }
