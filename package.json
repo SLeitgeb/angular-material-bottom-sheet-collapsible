@@ -1,15 +1,15 @@
 {
   "name": "angular-material-bottom-sheet-collapsible",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "A collapsible bottom sheet inspired by Google Maps",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "John Walley",
+  "author": "Šimon Leitgeb",
   "license": "ISC",
   "repository": {
     "type": "git",
-    "url": "https://github.com/johnwalley/angular-material-bottom-sheet-collapsible.git"
+    "url": "https://github.com/SLeitgeb/angular-material-bottom-sheet-collapsible.git"
   }
 }

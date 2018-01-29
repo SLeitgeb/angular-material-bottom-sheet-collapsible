@@ -62,7 +62,7 @@ MdBottomSheetCollapsibleDirective.$inject = ["$mdBottomSheetCollapsible"];
  * </div>
  * </hljs>
  * <hljs lang="js">
- * var app = angular.module('app', ['ngMaterial']);
+ * let app = angular.module('app', ['ngMaterial']);
  * app.controller('MyController', function($scope, $mdBottomSheetCollapsible) {
  *   $scope.openBottomSheetCollapsible = function() {
  *     $mdBottomSheetCollapsible.show({
@@ -139,8 +139,9 @@ MdBottomSheetCollapsibleDirective.$inject = ["$mdBottomSheetCollapsible"];
 
 function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
   // how fast we need to flick down to close the sheet, pixels/ms
-  var CLOSING_VELOCITY = 0.5;
-  var PADDING = 80; // same as css
+  const STATE_VELOCITY = 0.5;
+  const PADDING = 0; // same as css
+  // const PADDING = 88; // same as css
 
   bottomSheetCollapsibleDefaults.$inject = ["$animate", "$mdConstant", "$mdUtil", "$mdTheming", "$mdBottomSheetCollapsible", "$rootElement", "$mdGesture"];
   return $$interimElementProvider('$mdBottomSheetCollapsible')
@@ -151,7 +152,7 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
 
   /* ngInject */
   function bottomSheetCollapsibleDefaults($animate, $mdConstant, $mdUtil, $mdTheming, $mdBottomSheetCollapsible, $rootElement, $mdGesture) {
-    var backdrop;
+    let backdrop;
 
     return {
       themable: true,
@@ -160,7 +161,7 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
       disableBackdrop: false,
       escapeToClose: true,
       clickOutsideToClose: true,
-      disableParentScroll: true
+      disableParentScroll: true,
     };
 
 
@@ -192,8 +193,9 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
         $animate.enter(backdrop, options.parent, null);
       }
 
-      var bottomSheetCollapsible = new BottomSheetCollapsible(element, options.parent);
-      options.bottomSheetCollapsible = bottomSheetCollapsible;
+      let bottomSheetCollapsible = new BottomSheetCollapsible(element, options.parent);
+
+      if (options.onLoad) options.onLoad(bottomSheetCollapsible);
 
       $mdTheming.inherit(bottomSheetCollapsible.element, options.parent);
 
@@ -201,9 +203,11 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
         options.restoreScroll = $mdUtil.disableScrollAround(bottomSheetCollapsible.element, options.parent);
       }
 
+      bottomSheetCollapsible.setHalfway();
+
       return $animate.enter(bottomSheetCollapsible.element, options.parent, backdrop)
         .then(function() {
-          var focusable = $mdUtil.findFocusTarget(element) || angular.element(
+          let focusable = $mdUtil.findFocusTarget(element) || angular.element(
             element[0].querySelector('button') ||
             element[0].querySelector('a') ||
             element[0].querySelector('[ng-click]')
@@ -219,13 +223,15 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
             $rootElement.on('keyup', options.rootElementKeyupCallback);
             focusable && focusable.focus();
           }
+
+
         });
 
     }
 
     function onRemove(scope, element, options) {
 
-      var bottomSheetCollapsible = options.bottomSheetCollapsible;
+      let bottomSheetCollapsible = options.bottomSheetCollapsible;
 
       if (!options.disableBackdrop) $animate.leave(backdrop);
       return $animate.leave(bottomSheetCollapsible.element).then(function() {
@@ -242,11 +248,15 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
      * BottomSheetCollapsible class to apply bottom-sheet-collapsible behavior to an element
      */
     function BottomSheetCollapsible(element, parent) {
-      var deregister = $mdGesture.register(parent, 'drag', { horizontal: false });
-      var peekHeight = 100;
-      var minOffset = 400;
-      var dragging = false;
-      var state = "STATE_COLLAPSED";
+      let deregisterDrag = $mdGesture.register(parent, 'drag', { horizontal: false });
+      const transitionDuration = 500;
+      let LHeight = window.innerHeight;
+      let MHeight = window.innerHeight * .6;
+      let SHeight = window.innerHeight - 56; // or toolbar height
+      const peekHeight = 100;
+      const minOffset = 400;
+      let dragging = false;
+      let state = "halfway";
 
       parent.on('$md.dragstart', onDragStart)
         .on('$md.drag', onDrag)
@@ -255,19 +265,65 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
       return {
         element: element,
         cleanup: function cleanup() {
-          deregister();
+          deregisterDrag();
           parent.off('$md.dragstart', onDragStart);
           parent.off('$md.drag', onDrag);
           parent.off('$md.dragend', onDragEnd);
-        }
+        },
+        setExpanded: setExpanded,
+        setHalfway: setHalfway,
+        setMinimized: setMinimized,
+        getState: getState,
       };
+
+      function composedPath (el) {
+          let path = [];
+          while (el) {
+              path.push(el);
+              if (el.tagName === 'HTML') {
+                  path.push(document);
+                  path.push(window);
+                  return path;
+             }
+             el = el.parentElement;
+          }
+      }
+
+      function getState() {
+        return state;
+      }
+
+      function setExpanded() {
+        element.css($mdConstant.CSS.TRANSITION_DURATION, '');
+        element.css($mdConstant.CSS.TRANSFORM, '');
+        element.removeClass("minimized halfway");
+        element.addClass("expanded");
+        state = "expanded";
+      }
+
+      function setHalfway() {
+        element.css($mdConstant.CSS.TRANSITION_DURATION, transitionDuration + 'ms');
+        element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + window.innerHeight * .4) + 'px,0)');
+        element.removeClass("minimized expanded");
+        element.addClass("halfway");
+        state = "halfway"
+      }
+
+      function setMinimized() {
+        element.css($mdConstant.CSS.TRANSITION_DURATION, transitionDuration + 'ms');
+        element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + SHeight) + 'px,0)');
+        element.removeClass("expanded halfway");
+        element.addClass("minimized");
+        state = "minimized"
+      }
 
       function onDragStart(ev) {
         // Disable transitions on transform so that it feels fast
         element.css($mdConstant.CSS.TRANSITION_DURATION, '0ms');
 
         dragging = false;
-        ev.path.forEach(function(el) {
+        // ev.path.forEach(function(el) {
+        composedPath(ev.target).forEach(function(el) {
           if (el.tagName == "MD-BOTTOM-SHEET-COLLAPSIBLE") {
             dragging = true;
           }
@@ -276,43 +332,101 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
 
       function onDrag(ev) {
         if (dragging) {
-          var transform = ev.pointer.distanceY;
+          let transform = ev.pointer.distanceY;
           if (transform > 0) {
           }
 
-          if (state === "STATE_COLLAPSED") {
+          if (state === "expanded") {
             element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform) + 'px,0)');
+          } else if (state === "halfway") {
+            element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform + MHeight) + 'px,0)');
           } else {
-            element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform - minOffset) + 'px,0)');
+            element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform + SHeight) + 'px,0)');
           }
+          // if (state === "minimized") {
+          //   element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform + maxOffset) + 'px,0)');
+          // } else if (state === "halfway") {
+          //   element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform) + 'px,0)');
+          // } else {
+          //   element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform - minOffset) + 'px,0)');
+          // }
 
         }
       }
 
       function onDragEnd(ev) {
         if (dragging) {
-          if (ev.pointer.distanceY > 0 &&
-              (ev.pointer.distanceY > 20 || Math.abs(ev.pointer.velocityY) > CLOSING_VELOCITY)) {
-
-            if (state == "STATE_EXPANDED") {
-              element.css($mdConstant.CSS.TRANSITION_DURATION, '');
-              element.css($mdConstant.CSS.TRANSFORM, '');
-              state = "STATE_COLLAPSED"
+          // console.log(ev.pointer.velocityY);
+          if (state === "expanded") {
+            if ((ev.pointer.distanceY > 20 && ev.pointer.distanceY < (LHeight - MHeight) && ev.pointer.velocityY > 0) || (ev.pointer.distanceY > 0 && ev.pointer.distanceY < (LHeight - MHeight) && ev.pointer.velocityY > STATE_VELOCITY)) {
+              setHalfway();
+            } else if (ev.pointer.distanceY > (20 + LHeight - MHeight) || (ev.pointer.distanceY > (LHeight - MHeight) && ev.pointer.velocityY > STATE_VELOCITY)) {
+              if (ev.pointer.velocityY > 0) {
+                setMinimized();
+              } else if (ev.pointer.velocityY < 0) {
+                setHalfway();
+              }
             } else {
-              var transitionDuration = 500;
-              element.css($mdConstant.CSS.TRANSITION_DURATION, transitionDuration + 'ms');
-              $mdUtil.nextTick($mdBottomSheetCollapsible.cancel, true);
+              setExpanded();
             }
-          } else if (ev.pointer.distanceY < 0) {
-            var transitionDuration = 500;
-            element.css($mdConstant.CSS.TRANSITION_DURATION, transitionDuration + 'ms');
-            element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING - minOffset) + 'px,0)');
-            state = "STATE_EXPANDED";
-          } else {
-            element.css($mdConstant.CSS.TRANSITION_DURATION, '');
-            element.css($mdConstant.CSS.TRANSFORM, '');
-            state = "STATE_COLLAPSED"
+          } else if (state === "halfway") {
+            if (ev.pointer.distanceY > 0 && (ev.pointer.distanceY > 20 || ev.pointer.velocityY > STATE_VELOCITY)) {
+              if (ev.pointer.velocityY > 0) {
+                setMinimized();
+              }
+            } else if (ev.pointer.distanceY < 0 && (ev.pointer.distanceY < -20 || ev.pointer.velocityY < STATE_VELOCITY * -1)) {
+              if (ev.pointer.velocityY < 0) {
+                setExpanded();
+              }
+            } else {
+              setHalfway()
+            }
+          } else if (state === "minimized") {
+            if ((ev.pointer.distanceY < -20 && ev.pointer.distanceY > (SHeight - MHeight) && ev.pointer.velocityY < 0) || (ev.pointer.distanceY < 0 && ev.pointer.distanceY > (SHeight - MHeight) && ev.pointer.velocityY < STATE_VELOCITY * -1)) {
+              setHalfway();
+            } else if (ev.pointer.distanceY < (SHeight - MHeight - 20) || (ev.pointer.distanceY < (SHeight - MHeight) && ev.pointer.velocityY < STATE_VELOCITY * -1)) {
+              if (ev.pointer.velocityY < 0) {
+                setExpanded();
+              } else if (ev.pointer.velocityY > 0) {
+                setHalfway();
+              }
+            } else {
+              setMinimized();
+            }
           }
+          /////
+          // if (ev.pointer.distanceY > 0 &&
+          //     (ev.pointer.distanceY > 20 || Math.abs(ev.pointer.velocityY) > CLOSING_VELOCITY)) {
+
+          //   if (state === "expanded") {
+          //     // let transitionDuration = 500;
+          //     element.css($mdConstant.CSS.TRANSITION_DURATION, transitionDuration + 'ms');
+          //     element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + window.innerHeight*.7) + 'px,0)');
+          //     // element.css($mdConstant.CSS.TRANSITION_DURATION, '');
+          //     // element.css($mdConstant.CSS.TRANSFORM, '');
+          //     state = "halfway"
+          //   } else if (state === "halfway") {
+          //     // let transitionDuration = 500;
+          //     element.css($mdConstant.CSS.TRANSITION_DURATION, transitionDuration + 'ms');
+          //     element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + window.innerHeight - 56) + 'px,0)');
+          //     // $mdUtil.nextTick($mdBottomSheetCollapsible.cancel, true);
+          //     state = "minimized"
+          //   }
+          // } else if (ev.pointer.distanceY < 0) {
+          //   if (state === "minimized") {
+
+          //   } else if (state === "halfway") {
+          //     // let transitionDuration = 500;
+          //     element.css($mdConstant.CSS.TRANSITION_DURATION, transitionDuration + 'ms');
+          //     element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING - minOffset) + 'px,0)');
+          //     state = "expanded";
+          //   }
+          // } else {
+          //   element.css($mdConstant.CSS.TRANSITION_DURATION, '');
+          //   element.css($mdConstant.CSS.TRANSFORM, '');
+          //   state = "halfway"
+          // }
+          /////
         }
       }
     }
