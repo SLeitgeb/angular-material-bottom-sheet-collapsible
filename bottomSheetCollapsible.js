@@ -382,7 +382,7 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
               setHalfway()
             }
           } else if (state === "minimized") {
-            if ((ev.pointer.distanceY < -20 && ev.pointer.distanceY > (SHeight - MHeight) && ev.pointer.velocityY < 0) || (ev.pointer.distanceY < 0 && ev.pointer.distanceY > (SHeight - MHeight) && ev.pointer.velocityY < STATE_VELOCITY * -1)) {
+            if ((ev.pointer.distanceY < -20 && ev.pointer.distanceY > (MHeight - SHeight) && ev.pointer.velocityY < 0) || (ev.pointer.distanceY < 0 && ev.pointer.distanceY > (MHeight - SHeight) && ev.pointer.velocityY < STATE_VELOCITY * -1)) {
               setHalfway();
             } else if (ev.pointer.distanceY < (SHeight - MHeight - 20) || (ev.pointer.distanceY < (SHeight - MHeight) && ev.pointer.velocityY < STATE_VELOCITY * -1)) {
               if (ev.pointer.velocityY < 0) {
