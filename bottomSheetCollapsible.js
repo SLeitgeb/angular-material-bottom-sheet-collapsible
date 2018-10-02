@@ -252,7 +252,7 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
       const transitionDuration = 500;
       let LHeight = window.innerHeight;
       let MHeight = window.innerHeight * .6;
-      let SHeight = window.innerHeight - 56; // or toolbar height
+      let SHeight = 56; // or toolbar height
       const peekHeight = 100;
       const minOffset = 400;
       let dragging = false;
@@ -303,18 +303,18 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
 
       function setHalfway() {
         element.css($mdConstant.CSS.TRANSITION_DURATION, transitionDuration + 'ms');
-        element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + window.innerHeight * .4) + 'px,0)');
+        element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + window.innerHeight - MHeight) + 'px,0)');
         element.removeClass("minimized expanded");
         element.addClass("halfway");
-        state = "halfway"
+        state = "halfway";
       }
 
       function setMinimized() {
         element.css($mdConstant.CSS.TRANSITION_DURATION, transitionDuration + 'ms');
-        element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + SHeight) + 'px,0)');
+        element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + window.innerHeight - SHeight) + 'px,0)');
         element.removeClass("expanded halfway");
         element.addClass("minimized");
-        state = "minimized"
+        state = "minimized";
       }
 
       function onDragStart(ev) {
@@ -329,7 +329,7 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
           }
         });
       }
-
+      
       function onDrag(ev) {
         if (dragging) {
           let transform = ev.pointer.distanceY;
@@ -337,25 +337,35 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
           }
 
           if (state === "expanded") {
-            element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform) + 'px,0)');
+            var offset = transform > 0 ? transform : 0;
+            element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + offset) + 'px,0)');
           } else if (state === "halfway") {
-            element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform + MHeight) + 'px,0)');
+            // console.log(transform, MHeight - window.innerHeight);
+            // var offset;
+            // if (transform < MHeight - window.innerHeight) {
+            //   offset = MHeight - window.innerHeight;
+            // } else {
+            //   offset = transform;
+            // }
+            var offset = transform > MHeight - window.innerHeight ? transform : MHeight - window.innerHeight;
+            element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + offset + window.innerHeight - MHeight) + 'px,0)');
           } else {
-            element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform + SHeight) + 'px,0)');
+            // var offset;
+            // if (transform < SHeight - window.innerHeight) {
+            //   offset = SHeight - window.innerHeight;
+            // } else {
+            //   offset = transform;
+            // }
+            var offset = transform > SHeight - window.innerHeight ? transform : SHeight - window.innerHeight;
+            element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + offset + window.innerHeight - SHeight) + 'px,0)');
           }
-          // if (state === "minimized") {
-          //   element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform + maxOffset) + 'px,0)');
-          // } else if (state === "halfway") {
-          //   element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform) + 'px,0)');
-          // } else {
-          //   element.css($mdConstant.CSS.TRANSFORM, 'translate3d(0,' + (PADDING + transform - minOffset) + 'px,0)');
-          // }
-
         }
       }
 
       function onDragEnd(ev) {
         if (dragging) {
+          onDrag(ev);
+
           // console.log(ev.pointer.velocityY);
           if (state === "expanded") {
             if ((ev.pointer.distanceY > 20 && ev.pointer.distanceY < (LHeight - MHeight) && ev.pointer.velocityY > 0) || (ev.pointer.distanceY > 0 && ev.pointer.distanceY < (LHeight - MHeight) && ev.pointer.velocityY > STATE_VELOCITY)) {
@@ -382,7 +392,7 @@ function MdBottomSheetCollapsibleProvider($$interimElementProvider) {
               setHalfway()
             }
           } else if (state === "minimized") {
-            if ((ev.pointer.distanceY < -20 && ev.pointer.distanceY > (MHeight - SHeight) && ev.pointer.velocityY < 0) || (ev.pointer.distanceY < 0 && ev.pointer.distanceY > (MHeight - SHeight) && ev.pointer.velocityY < STATE_VELOCITY * -1)) {
+            if ((ev.pointer.distanceY < -20 && ev.pointer.distanceY > (SHeight - MHeight) && ev.pointer.velocityY < 0) || (ev.pointer.distanceY < 0 && ev.pointer.distanceY > (SHeight - MHeight) && ev.pointer.velocityY < STATE_VELOCITY * -1)) {
               setHalfway();
             } else if (ev.pointer.distanceY < (SHeight - MHeight - 20) || (ev.pointer.distanceY < (SHeight - MHeight) && ev.pointer.velocityY < STATE_VELOCITY * -1)) {
               if (ev.pointer.velocityY < 0) {
